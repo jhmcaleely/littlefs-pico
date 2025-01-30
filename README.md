@@ -27,4 +27,4 @@ A definition of a single flash area to use as a filesystem. The range is at the 
 
 ## Tools
 
-I found '[flash_nuke.utf2](https://www.raspberrypi.com/documentation/microcontrollers/pico-series.html#resetting-flash-memory)' useful to reset the pico's flash device for testing.
+I found '[flash_nuke.uf2](https://www.raspberrypi.com/documentation/microcontrollers/pico-series.html#resetting-flash-memory)' useful to reset the pico's flash device for testing.
