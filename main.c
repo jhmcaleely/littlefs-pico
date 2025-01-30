@@ -2,31 +2,42 @@
 #include <pico/stdlib.h>
 
 #include "littlefs/lfs.h"
+#include "pico_lfs_hal.h"
+
+#include "pico_flash_fs.h"
 
 // configuration of the filesystem is provided by this struct
 struct lfs_config cfg = {
     // block device operations
-    .read  = NULL,
-    .prog  = NULL,
-    .erase = NULL,
-    .sync  = NULL,
+    .read  = pico_read_flash_block,
+    .prog  = pico_prog_flash_block,
+    .erase = pico_erase_flash_block,
+    .sync  = pico_sync_flash_block,
 
     // block device configuration
+
+    // device is memory mapped for reading, so reading can be per byte
     .read_size = 1,
-    .prog_size = 0,
-    .block_size = 0,
-    .block_count = 0,
-    .cache_size = 0 * 0,
+    
+    .prog_size = PICO_PROG_PAGE_SIZE,
+    .block_size = PICO_ERASE_PAGE_SIZE,
+
+    // the number of blocks we use for a flash fs.
+    .block_count = FLASHFS_BLOCK_COUNT,
+
+    // cache needs to be a multiple of the programming page size.
+    .cache_size = PICO_PROG_PAGE_SIZE * 1,
+
     .lookahead_size = 16,
     .block_cycles = 500,
 };
-
 
 lfs_t lfs;
 lfs_file_t file;
 
 int main()
 {
+    // thr Pico SDK requires init at the start of main()
     stdio_init_all();
 
     // mount the filesystem

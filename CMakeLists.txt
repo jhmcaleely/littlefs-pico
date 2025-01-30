@@ -34,7 +34,7 @@ project(littlefs-pico C CXX ASM)
 pico_sdk_init()
 
 # Add executable. Default name is the project name, version 0.1
-add_executable(littlefs-pico main.c littlefs/lfs.c littlefs/lfs_util.c)
+add_executable(littlefs-pico main.c pico_lfs_hal.c littlefs/lfs.c littlefs/lfs_util.c)
 
 pico_set_program_name(littlefs-pico "littlefs-pico")
 pico_set_program_version(littlefs-pico "0.1")
