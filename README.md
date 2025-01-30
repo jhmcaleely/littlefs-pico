@@ -6,12 +6,12 @@ After installing the Raspberry Pi Pico SDK extensions to VSCode, opening this fo
 
 Alternatively, if you have the Pico SDK installed:
 
-'''
+```
 % cmake .
 % cmake --build .
-'''
+```
 
-will create 'littlefs-pico.uf2' that can be flashed onto a pico as usual. By default, serial output (from printf, etc) will be available over the USB and uart ports on the pico.
+will create `littlefs-pico.uf2` that can be flashed onto a pico as usual. By default, serial output (from printf, etc) will be available over the USB and uart ports on the pico.
 
 ## main.c
 
