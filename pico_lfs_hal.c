@@ -83,7 +83,7 @@ int pico_erase_flash_block(const struct lfs_config *c, lfs_block_t block) {
     
     struct erase_param p;
     p.offset = FLASHFS_FLASH_OFFSET + block * PICO_ERASE_PAGE_SIZE;
-    p.size = c->block_size;
+    p.size = PICO_ERASE_PAGE_SIZE;
 
     int rc = flash_safe_execute(call_flash_range_erase, &p, UINT32_MAX);
     if (rc == PICO_OK) {
