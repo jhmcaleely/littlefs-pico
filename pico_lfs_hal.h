@@ -13,7 +13,7 @@ int pico_sync_flash_block(const struct lfs_config *c);
 #define PICO_ERASE_PAGE_SIZE 4096
 #define PICO_PROG_PAGE_SIZE 256
 
-// Pico's flash device appears at XIP_BASE, and reads are identical to reading from memory.
+// Pico's flash device appears at XIP_MAIN_BASE, and reads are identical to reading from memory.
 // The flash device has a cache, and the device is mapped to 4 different locations in the 
 // address map. Which address range you use, determines the cache behaviour.
 // I assume it makes most sense to use the non-cached access, as littlefs has it's own ram
