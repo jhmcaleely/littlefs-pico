@@ -10,12 +10,7 @@
 #define FLASHFS_BLOCK_COUNT 128
 #define FLASHFS_SIZE (PICO_ERASE_PAGE_SIZE * FLASHFS_BLOCK_COUNT)
 
-// We access the flash fs with two addressing modes - a memory address for 
-// reading, and an offset (in bytes) for erase/programming. these constants
-// are the start of our filesystem in the device.
-
+// A start location counted back from the end of the device.
 #define FLASHFS_BASE_ADDR ((const uint8_t*)(PICO_FLASH_BASE_ADDR + PICO_FLASH_SIZE_BYTES - FLASHFS_SIZE))
-#define FLASHFS_FLASH_OFFSET ((const size_t)(FLASHFS_BASE_ADDR - PICO_FLASH_BASE_ADDR))
-
 
 #endif

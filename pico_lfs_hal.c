@@ -7,13 +7,16 @@
 
 #include "pico_flash_fs.h"
 
+// We need an offset in bytes for erase and program operations.
+#define FLASHFS_FLASH_OFFSET ((const size_t)(FLASHFS_BASE_ADDR - PICO_FLASH_BASE_ADDR))
+
 int pico_read_flash_block(const struct lfs_config *c, 
                           lfs_block_t block,
                           lfs_off_t off, 
                           void *buffer, 
                           lfs_size_t size) {
 
-    memcpy(buffer, FLASHFS_BASE_ADDR + block * c->block_size + off, size);
+    memcpy(buffer, FLASHFS_BASE_ADDR + block * PICO_ERASE_PAGE_SIZE + off, size);
     return LFS_ERR_OK;
 }
 
@@ -35,7 +38,7 @@ int pico_prog_flash_block(const struct lfs_config *c,
                           lfs_size_t size) {
 
     struct prog_param p;
-    p.flash_offs = FLASHFS_FLASH_OFFSET + block * c->block_size + off;
+    p.flash_offs = FLASHFS_FLASH_OFFSET + block * PICO_ERASE_PAGE_SIZE + off;
     p.data = buffer;
     p.count = size;
 
@@ -61,7 +64,7 @@ static void call_flash_range_erase(void* param) {
 int pico_erase_flash_block(const struct lfs_config *c, lfs_block_t block) {
     
     struct erase_param p;
-    p.offset = FLASHFS_FLASH_OFFSET + block * c->block_size;
+    p.offset = FLASHFS_FLASH_OFFSET + block * PICO_ERASE_PAGE_SIZE;
     p.size = c->block_size;
 
     int rc = flash_safe_execute(call_flash_range_erase, &p, UINT32_MAX);
