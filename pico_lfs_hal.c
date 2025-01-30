@@ -79,7 +79,7 @@ static void call_flash_range_erase(void* param) {
 int pico_erase_flash_block(const struct lfs_config *c, lfs_block_t block) {
     
     uint32_t offset = FLASHFS_FLASH_OFFSET + block * PICO_ERASE_PAGE_SIZE;
-
+    
     int rc = flash_safe_execute(call_flash_range_erase, (void*)offset, UINT32_MAX);
     if (rc == PICO_OK) {
         return LFS_ERR_OK;
@@ -92,8 +92,7 @@ int pico_erase_flash_block(const struct lfs_config *c, lfs_block_t block) {
 /*
  * The need for this function is unclear. As of writing, it has little 
  * documentation. If we access flash with caching disabled (via XIP_NOCACHE_NOALLOC_BASE)
- * I imagine it may be doing nothing. No provision for wrapping it in flash_safe_execute
- * appears to exist.
+ * I imagine it may be doing nothing. It is unclear if flash_safe_execute is needed.
  */
 int pico_sync_flash_block(const struct lfs_config *c) {
     flash_flush_cache();
