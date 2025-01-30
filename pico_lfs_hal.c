@@ -52,10 +52,11 @@ int pico_prog_flash_block(const struct lfs_config *c,
                           const void *buffer, 
                           lfs_size_t size) {
 
-    struct prog_param p;
-    p.flash_offs = FLASHFS_FLASH_OFFSET + block * PICO_ERASE_PAGE_SIZE + off;
-    p.data = buffer;
-    p.count = size;
+    struct prog_param p = {
+        .flash_offs = FLASHFS_FLASH_OFFSET + block * PICO_ERASE_PAGE_SIZE + off,
+        .data = buffer,
+        .count = size
+    };
 
     int rc = flash_safe_execute(call_flash_range_program, &p, UINT32_MAX);
     if (rc == PICO_OK) {
@@ -66,14 +67,10 @@ int pico_prog_flash_block(const struct lfs_config *c,
     }
 }
 
-struct erase_param {
-    uint32_t offset;
-    size_t size;
-};
-
+// we only need to pass one parameter, so cast it into the pointer.
 static void call_flash_range_erase(void* param) {
-    struct erase_param* p = (struct erase_param *)param;
-    flash_range_erase(p->offset, p->size);
+    uint32_t offset = (uint32_t)param;
+    flash_range_erase(offset, PICO_ERASE_PAGE_SIZE);
 }
 
 /*
@@ -81,11 +78,9 @@ static void call_flash_range_erase(void* param) {
  */
 int pico_erase_flash_block(const struct lfs_config *c, lfs_block_t block) {
     
-    struct erase_param p;
-    p.offset = FLASHFS_FLASH_OFFSET + block * PICO_ERASE_PAGE_SIZE;
-    p.size = PICO_ERASE_PAGE_SIZE;
+    uint32_t offset = FLASHFS_FLASH_OFFSET + block * PICO_ERASE_PAGE_SIZE;
 
-    int rc = flash_safe_execute(call_flash_range_erase, &p, UINT32_MAX);
+    int rc = flash_safe_execute(call_flash_range_erase, (void*)offset, UINT32_MAX);
     if (rc == PICO_OK) {
         return LFS_ERR_OK;
     }
