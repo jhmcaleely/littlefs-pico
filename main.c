@@ -37,7 +37,7 @@ lfs_file_t file;
 
 int main()
 {
-    // thr Pico SDK requires init at the start of main()
+    // the Pico SDK requires init at the start of main()
     stdio_init_all();
 
     // mount the filesystem
