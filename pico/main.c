@@ -1,7 +1,7 @@
 #include <stdio.h>
 #include <pico/stdlib.h>
 
-#include "littlefs/lfs.h"
+#include "../littlefs/lfs.h"
 #include "pico_lfs_hal.h"
 
 #include "pico_flash_fs.h"
