@@ -2,7 +2,6 @@
 
 #include "block_device.h"
 #include "bdfs_lfs_hal.h"
-#include "pico_flash_device.h"
 #include "../pico_flash_fs.h"
 
 struct flash_fs {
