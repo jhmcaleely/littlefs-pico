@@ -1,3 +1,6 @@
 [submodule "littlefs"]
 	path = littlefs
 	url = https://github.com/littlefs-project/littlefs
+[submodule "uf2"]
+	path = uf2
+	url = git@github.com:microsoft/uf2
