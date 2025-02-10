@@ -1,30 +1,11 @@
 # littlefs-pico
 
-A repo to build the example code found in [littlefs/README.md](https://github.com/littlefs-project/littlefs/blob/0494ce7169f06a734a7bd7585f49a9fa91fa7318/README.md) for the Raspberry Pi Pico, using the vscode plugin and Pico SDK.
+This repo contains two implementations of the littlefs sample code. One runs on the pico, and demonstrates sharing the flash device between firmware and a flash filesystem. The other runs on your host pc, and demonstrates creating pre-populated filesystems on the host, for subsequent flashing to the pico. A filesystem image can be combined with a firmware image to produce a single flashable uf2 file.
 
-After installing the Raspberry Pi Pico SDK extensions to VSCode, opening this folder should present build and run options.
+pico/ Firmware for Pico that runs the littlefs sample on target
+host-uf2/ Host PC program to create uf2 files with littlefs sample
 
-Alternatively, if you have the Pico SDK installed:
+littlefs/ Upstream littlefs
+uf2/ Upstream UF2
 
-```
-% cmake .
-% cmake --build .
-```
-
-will create `littlefs-pico.uf2` that can be flashed onto a pico as usual. By default, serial output (from printf, etc) will be available over the USB and uart ports on the pico.
-
-## main.c
-
-The example code that formats a littlefs drive, and counts reboots in a file.
-
-## pico_lfs_hal.c and pico_lfs_hal.h
-
-An implementation of the littelfs block device that uses the Pico C SDK (tested on 2.1) to read/write/erase blocks to the built in flash on a Pico.
-
-## pico_flash_fs.h
-
-A definition of a single flash area to use as a filesystem. The range is at the opposite end of flash to that used by code, so that it is easy to reflash code without clobbering the flash drive.
-
-## Tools
-
-I found '[flash_nuke.uf2](https://www.raspberrypi.com/documentation/microcontrollers/pico-series.html#resetting-flash-memory)' useful to reset the pico's flash device for testing.
+pico_flash_fs.h Shared definitions of a flash filesystem stoarage area.

@@ -1,22 +1,22 @@
 #include <stdio.h>
-#include <pico/stdlib.h>
 
-#include "littlefs/lfs.h"
-#include "pico_lfs_hal.h"
+#include "../littlefs/lfs.h"
 
-#include "pico_flash_fs.h"
+#include "block_device.h"
+#include "bdfs_lfs_hal.h"
+#include "../pico_flash_fs.h"
+
 
 // configuration of the filesystem is provided by this struct
 struct lfs_config cfg = {
     // block device operations
-    .read  = pico_read_flash_block,
-    .prog  = pico_prog_flash_block,
-    .erase = pico_erase_flash_block,
-    .sync  = pico_sync_flash_block,
+    .read  = bdfs_read,
+    .prog  = bdfs_prog_page,
+    .erase = bdfs_erase_block,
+    .sync  = bdfs_sync_block,
 
     // block device configuration
 
-    // device is memory mapped for reading, so reading can be per byte
     .read_size = 1,
     
     .prog_size = PICO_PROG_PAGE_SIZE,
@@ -35,10 +35,37 @@ struct lfs_config cfg = {
 lfs_t lfs;
 lfs_file_t file;
 
-int main()
-{
-    // the Pico SDK requires init at the start of main()
-    stdio_init_all();
+void readuf2(const char * input, struct block_device* bd) {
+    FILE* iofile = fopen(input, "rb");
+    if (iofile) {
+        bdReadFromUF2(bd, iofile);
+        fclose(iofile);
+    }
+}
+
+void writeuf2(const char * input, struct block_device* bd) {
+    FILE* iofile = fopen(input, "wb");
+    if (iofile) {
+        bdWriteToUF2(bd, iofile);
+    
+        fclose(iofile);
+    }
+}
+
+int main(int argc, char* argv[]) {
+    if (argc < 2 || argc > 3) {
+        printf("Usage:\n");
+        printf("  %s iofile\n", argv[0]);
+        printf("  %s infile outfile\n", argv[0]);
+        exit(1);
+    }
+
+    const char* infile = argv[1];
+    const char* outfile = argc == 3 ? argv[2] : infile;
+
+    struct block_device* bd = bdCreate(PICO_FLASH_BASE_ADDR);
+    bdfs_create_hal_at(&cfg, bd, FLASHFS_BASE_ADDR);
+    readuf2(infile, bd);
 
     // mount the filesystem
     int err = lfs_mount(&lfs, &cfg);
@@ -65,6 +92,10 @@ int main()
 
     // release any resources we were using
     lfs_unmount(&lfs);
+    writeuf2(outfile, bd);
+
+    bdfs_destroy_hal(&cfg);
+    bdDestroy(bd);
 
     // print the boot count
     printf("boot_count: %d\n", boot_count);

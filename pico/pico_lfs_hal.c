@@ -5,10 +5,17 @@
 #include <pico/flash.h>
 #include <hardware/flash.h>
 
-#include "pico_flash_fs.h"
+#include "../pico_flash_fs.h"
 
 // We need an offset in bytes for erase and program operations.
 #define FLASHFS_FLASH_OFFSET ((const size_t)(FLASHFS_BASE_ADDR - PICO_FLASH_BASE_ADDR))
+
+const uint8_t* fsAddressForBlock(uint32_t block, uint32_t off) {
+
+    uint32_t byte_offset = block * PICO_ERASE_PAGE_SIZE + off;
+
+    return (const uint8_t*) FLASHFS_BASE_ADDR + byte_offset;
+}
 
 /*
  * Read from the flash device. Pico's flash is memory mapped, so memcpy will work well
@@ -19,7 +26,7 @@ int pico_read_flash_block(const struct lfs_config *c,
                           void *buffer, 
                           lfs_size_t size) {
 
-    memcpy(buffer, FLASHFS_BASE_ADDR + block * PICO_ERASE_PAGE_SIZE + off, size);
+    memcpy(buffer, fsAddressForBlock(block, off), size);
     return LFS_ERR_OK;
 }
 

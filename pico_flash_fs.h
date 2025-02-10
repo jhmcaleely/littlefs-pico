@@ -7,10 +7,11 @@
 // Pico's have a 2Mb flash device, so we're looking to be less than 2Mb.
 
 // 128 blocks will reserve a 512K filsystem - 1/4 of the 2Mb device on a Pico
+
 #define FLASHFS_BLOCK_COUNT 128
-#define FLASHFS_SIZE (PICO_ERASE_PAGE_SIZE * FLASHFS_BLOCK_COUNT)
+#define FLASHFS_SIZE_BYTES (PICO_ERASE_PAGE_SIZE * FLASHFS_BLOCK_COUNT)
 
 // A start location counted back from the end of the device.
-#define FLASHFS_BASE_ADDR ((const uint8_t*)(PICO_FLASH_BASE_ADDR + PICO_FLASH_SIZE_BYTES - FLASHFS_SIZE))
+#define FLASHFS_BASE_ADDR (PICO_FLASH_BASE_ADDR + PICO_FLASH_SIZE_BYTES - FLASHFS_SIZE_BYTES)
 
 #endif
