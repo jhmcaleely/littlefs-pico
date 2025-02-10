@@ -6,6 +6,7 @@
 
 #include "block_device.h"
 
+#include "pico_flash_device.h"
 #include "pico_flash_fs.h"
 #include "../uf2/uf2.h"
 
