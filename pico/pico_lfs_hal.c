@@ -97,11 +97,10 @@ int pico_erase_flash_block(const struct lfs_config *c, lfs_block_t block) {
 }
 
 /*
- * The need for this function is unclear. As of writing, it has little 
- * documentation. If we access flash with caching disabled (via XIP_NOCACHE_NOALLOC_BASE)
- * I imagine it may be doing nothing. It is unclear if flash_safe_execute is needed.
+ * Our writes appear to be atomic without the need for a second 'flush' to complete
+ * any pending writes.
  */
 int pico_sync_flash_block(const struct lfs_config *c) {
-    flash_flush_cache();
+    
     return LFS_ERR_OK;
 }
