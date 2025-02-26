@@ -7,18 +7,22 @@
 
 #include "../pico_flash_fs.h"
 
+// littlefs hal for Pico. Assumes only one filesystem will be present in the device, unlike
+// host-uf2 alongside, which can potentially write multiple filesystems to different areas of
+// the flash device.
+
 // We need an offset in bytes for erase and program operations.
-#define FLASHFS_FLASH_OFFSET ((const size_t)(FLASHFS_BASE_ADDR - PICO_FLASH_BASE_ADDR))
-
-const uint8_t* fsAddressForBlock(uint32_t block, uint32_t off) {
-
-    uint32_t byte_offset = block * PICO_ERASE_PAGE_SIZE + off;
-
-    return (const uint8_t*) FLASHFS_BASE_ADDR + byte_offset;
-}
+#define FLASHFS_FLASH_OFFSET ((const size_t)(FLASHFS_BASE_ADDR - XIP_MAIN_BASE))
 
 /*
- * Read from the flash device. Pico's flash is memory mapped, so memcpy will work well
+ * Read from the flash device. Pico's flash is memory mapped, so memcpy will work well.
+ *
+ * Pico's flash device appears at XIP_MAIN_BASE, and reads are identical to reading from memory.
+ * The flash device has a cache, and the device is mapped to 4 different locations in the 
+ * address map. Which address range you use, determines the cache behaviour.
+ * For littlefs, which has it's own cache in RAM, we use the alias (XIP_NOCACHE_NOALLOC_BASE) 
+ * that skips the cache entirely This also means we don't have to do cache maintenance when 
+ * we write to the flash device.
  */
 int pico_read_flash_block(const struct lfs_config *c, 
                           lfs_block_t block,
@@ -26,7 +30,10 @@ int pico_read_flash_block(const struct lfs_config *c,
                           void *buffer, 
                           lfs_size_t size) {
 
-    memcpy(buffer, fsAddressForBlock(block, off), size);
+    uint32_t offset = FLASHFS_FLASH_OFFSET + block * PICO_ERASE_PAGE_SIZE + off;
+    uint32_t fsAddress = XIP_NOCACHE_NOALLOC_BASE + offset;
+
+    memcpy(buffer, (const uint8_t*) fsAddress, size);
     return LFS_ERR_OK;
 }
 
@@ -48,6 +55,9 @@ struct prog_param {
 static void call_flash_range_program(void* param) {
     struct prog_param* p = (struct prog_param*)param;
     flash_range_program(p->flash_offs, p->data, p->count);
+
+    // if using cached memory addresses for read, we would need to 
+    // remove cache references to this range here.
 }
 
 /*
@@ -78,6 +88,9 @@ int pico_prog_flash_block(const struct lfs_config *c,
 static void call_flash_range_erase(void* param) {
     uint32_t offset = (uint32_t)param;
     flash_range_erase(offset, PICO_ERASE_PAGE_SIZE);
+
+    // if using cached memory addresses for read, we would need to 
+    // remove cache references to this range here.
 }
 
 /*
