@@ -132,27 +132,41 @@ void bdRead(struct block_device* bd, uint32_t address, uint8_t* buffer, size_t s
     _bdRead(bd, ad.block, ad.page, ad.offset, buffer, size);
 }
 
-int countPages(struct block_device* bd) {
+int countPages(struct block_device* bd, uint32_t block) {
+    int pagesPresent = 0;
+
+    for (int p = 0; p < PICO_FLASH_PAGE_PER_BLOCK; p++) {
+        if (bd->page_present[block][p]) {
+            pagesPresent++;
+        }
+    }
+    return pagesPresent;
+}
+
+int countBlocks(struct block_device* bd) {
     int count = 0;
 
     for (int b = 0; b < PICO_DEVICE_BLOCK_COUNT; b++) {
-        for (int p = 0; p < PICO_FLASH_PAGE_PER_BLOCK; p++) {
-            if (bd->page_present[b][p]) {
-                count++;
-            }
+        if (countPages(bd, b) > 0) {
+            count++;
         }
     }
-
     return count;
 }
 
+/*
+ * Write UF2 frames, in multiples of Erase Blocks.
+ *  - Errata RP2040-E14 documents that the UF2 bootloader will not 
+ *    behave correctly with sparse UF2 files.
+ */
 void bdWriteToUF2(struct block_device* bd, FILE* output) {
-    int pageTotal = countPages(bd);
+    int pageTotal = countBlocks(bd) * PICO_FLASH_PAGE_PER_BLOCK;
+    printf("Blocks %d\n", pageTotal);
     int pageCursor = 0;
 
     for (int b = 0; b < PICO_DEVICE_BLOCK_COUNT; b++) {
-        for (int p = 0; p < PICO_FLASH_PAGE_PER_BLOCK; p++) {
-            if (bd->page_present[b][p]) {
+        if (countPages(bd, b) > 0) {
+            for (int p = 0; p < PICO_FLASH_PAGE_PER_BLOCK; p++) {
                 UF2_Block ub;
                 ub.magicStart0 = UF2_MAGIC_START0;
                 ub.magicStart1 = UF2_MAGIC_START1;
@@ -165,14 +179,23 @@ void bdWriteToUF2(struct block_device* bd, FILE* output) {
                 // documented as FamilyID, Filesize or 0.
                 ub.reserved = PICO_UF2_FAMILYID;
 
-                bdRead(bd, ub.targetAddr, ub.data, PICO_PROG_PAGE_SIZE);
+                if (bd->page_present[b][p]) {
 
-                // Zero fill the undefined space
-                memset(&ub.data[PICO_PROG_PAGE_SIZE], 0, sizeof(ub.data) - PICO_PROG_PAGE_SIZE);
+                    bdRead(bd, ub.targetAddr, ub.data, PICO_PROG_PAGE_SIZE);
+                    // Zero fill the undefined space
+                    memset(&ub.data[PICO_PROG_PAGE_SIZE], 0, sizeof(ub.data) - PICO_PROG_PAGE_SIZE);
+
+                    printf("Write uf2page: %08x, %d\n", ub.targetAddr, ub.payloadSize);
+                }
+                else {
+                    // Zero fill pages not actually used by the filesystem, but within
+                    // a block that has valid pages.
+                    memset(&ub.data[0], 0, sizeof(ub.data));
+
+                    printf("Write uf2page: %08x, (empty)\n", ub.targetAddr);
+                }
 
                 ub.magicEnd = UF2_MAGIC_END;
-                
-                printf("uf2page: %08x, %d\n", ub.targetAddr, ub.payloadSize);
 
                 fwrite(&ub, sizeof(ub), 1, output);
 
