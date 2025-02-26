@@ -132,16 +132,22 @@ void bdRead(struct block_device* bd, uint32_t address, uint8_t* buffer, size_t s
     _bdRead(bd, ad.block, ad.page, ad.offset, buffer, size);
 }
 
+int countPages(struct block_device* bd, uint32_t block) {
+    int pagesPresent = 0;
+
+    for (int p = 0; p < PICO_FLASH_PAGE_PER_BLOCK; p++) {
+        if (bd->page_present[block][p]) {
+            pagesPresent++;
+        }
+    }
+    return pagesPresent;
+}
+
 int countBlocks(struct block_device* bd) {
     int count = 0;
 
     for (int b = 0; b < PICO_DEVICE_BLOCK_COUNT; b++) {
-        bool pagePresent = false;
-
-        for (int p = 0; p < PICO_FLASH_PAGE_PER_BLOCK; p++) {
-            pagePresent |= bd->page_present[b][p];
-        }
-        if (pagePresent) {
+        if (countPages(bd, b) > 0) {
             count++;
         }
     }
@@ -155,43 +161,46 @@ int countBlocks(struct block_device* bd) {
  */
 void bdWriteToUF2(struct block_device* bd, FILE* output) {
     int pageTotal = countBlocks(bd) * PICO_FLASH_PAGE_PER_BLOCK;
+    printf("Blocks %d\n", pageTotal);
     int pageCursor = 0;
 
     for (int b = 0; b < PICO_DEVICE_BLOCK_COUNT; b++) {
-        for (int p = 0; p < PICO_FLASH_PAGE_PER_BLOCK; p++) {
-            UF2_Block ub;
-            ub.magicStart0 = UF2_MAGIC_START0;
-            ub.magicStart1 = UF2_MAGIC_START1;
-            ub.flags = UF2_FLAG_FAMILY_ID;
-            ub.targetAddr = bd->base_address + bdStorageOffset(b, p);
-            ub.payloadSize = PICO_PROG_PAGE_SIZE;
-            ub.blockNo = pageCursor;
-            ub.numBlocks = pageTotal;
-            
-            // documented as FamilyID, Filesize or 0.
-            ub.reserved = PICO_UF2_FAMILYID;
+        if (countPages(bd, b) > 0) {
+            for (int p = 0; p < PICO_FLASH_PAGE_PER_BLOCK; p++) {
+                UF2_Block ub;
+                ub.magicStart0 = UF2_MAGIC_START0;
+                ub.magicStart1 = UF2_MAGIC_START1;
+                ub.flags = UF2_FLAG_FAMILY_ID;
+                ub.targetAddr = bd->base_address + bdStorageOffset(b, p);
+                ub.payloadSize = PICO_PROG_PAGE_SIZE;
+                ub.blockNo = pageCursor;
+                ub.numBlocks = pageTotal;
+                
+                // documented as FamilyID, Filesize or 0.
+                ub.reserved = PICO_UF2_FAMILYID;
 
-            if (bd->page_present[b][p]) {
+                if (bd->page_present[b][p]) {
 
-                bdRead(bd, ub.targetAddr, ub.data, PICO_PROG_PAGE_SIZE);
-                // Zero fill the undefined space
-                memset(&ub.data[PICO_PROG_PAGE_SIZE], 0, sizeof(ub.data) - PICO_PROG_PAGE_SIZE);
+                    bdRead(bd, ub.targetAddr, ub.data, PICO_PROG_PAGE_SIZE);
+                    // Zero fill the undefined space
+                    memset(&ub.data[PICO_PROG_PAGE_SIZE], 0, sizeof(ub.data) - PICO_PROG_PAGE_SIZE);
 
-                printf("Write uf2page: %08x, %d\n", ub.targetAddr, ub.payloadSize);
+                    printf("Write uf2page: %08x, %d\n", ub.targetAddr, ub.payloadSize);
+                }
+                else {
+                    // Zero fill pages not actually used by the filesystem, but within
+                    // a block that has valid pages.
+                    memset(&ub.data[0], 0, sizeof(ub.data));
+
+                    printf("Write uf2page: %08x, (empty)\n", ub.targetAddr);
+                }
+
+                ub.magicEnd = UF2_MAGIC_END;
+
+                fwrite(&ub, sizeof(ub), 1, output);
+
+                pageCursor++;
             }
-            else {
-                // Zero fill pages not actually used by the filesystem, but within
-                // a block that has valid pages.
-                memset(&ub.data[0], 0, sizeof(ub.data));
-
-                printf("Write uf2page: %08x, (empty)\n", ub.targetAddr);
-            }
-
-            ub.magicEnd = UF2_MAGIC_END;
-
-            fwrite(&ub, sizeof(ub), 1, output);
-
-            pageCursor++;
         }
     }
 }
