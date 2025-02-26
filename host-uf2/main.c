@@ -63,7 +63,7 @@ int main(int argc, char* argv[]) {
     const char* infile = argv[1];
     const char* outfile = argc == 3 ? argv[2] : infile;
 
-    struct block_device* bd = bdCreate(PICO_FLASH_BASE_ADDR);
+    struct block_device* bd = bdCreate(XIP_MAIN_BASE);
     bdfs_create_hal_at(&cfg, bd, FLASHFS_BASE_ADDR);
     readuf2(infile, bd);
 
